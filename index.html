@@ -311,7 +311,7 @@ $('go').onclick=async()=>{
         }
       });
       const out=await doc.save();
-      download(out,S.files[i].name.replace(/\.pdf$/i,'')+'-filigranli.pdf');
+      download(out,S.files[i].name.replace(/\.pdf$/i,'')+'-pdfhane.pdf');
       await new Promise(r=>setTimeout(r,400));
     }
     say('Tamamlandı.');
