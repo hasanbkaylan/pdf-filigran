@@ -85,7 +85,10 @@ button.pri:hover{filter:brightness(1.1);background:var(--acc)}
   </fieldset>
 
   <fieldset><legend>Ayarlar ve çıktı</legend>
-    <div class="row"><button id="save">Ayarları kaydet</button><button id="clear">Kayıtlı ayarı sil</button></div>
+    <label for="suffix" style="margin-top:0">Dosya adı eki</label>
+    <input id="suffix" type="text" value="filigranli" placeholder="filigranli" maxlength="40">
+    <p class="note">Çıktı adı: <b id="sample"></b>. Boş bırakırsan “filigranli” kullanılır.</p>
+    <div class="row" style="margin-top:10px"><button id="save">Ayarları kaydet</button><button id="clear">Kayıtlı ayarı sil</button></div>
     <p class="note">Görsel, konum, bağlantı ve diğer ayarlar bu tarayıcıda saklanır; sayfa açılınca otomatik yüklenir.</p>
     <button id="go" class="pri" style="width:100%;margin-top:8px">Filigranla ve indir</button>
     <div id="msg" role="status"></div>
@@ -254,8 +257,11 @@ $('aly').onclick=e=>{
 })();
 
 /* ---------- kaydet / yükle ---------- */
+const suffix=()=>$('suffix').value.trim().replace(/[\\/:*?"<>|\x00-\x1f]/g,'').replace(/^[-_\s]+/,'')||'filigranli';
+function sample(){$('sample').textContent='isim-'+suffix()+'.pdf'}
+$('suffix').addEventListener('input',sample);
 function settings(){
-  return{t:type(),text:$('text').value,font:$('font').value,color:$('color').value,bold:$('bold').checked,
+  return{suffix:$('suffix').value,t:type(),text:$('text').value,font:$('font').value,color:$('color').value,bold:$('bold').checked,
     scale:$('scale').value,opacity:$('opacity').value,rot:$('rot').value,link:$('link').value,
     excl:$('excl').value,x:S.x,y:S.y,img:S.img};
 }
@@ -271,9 +277,11 @@ async function load(){
     $('text').value=s.text;$('font').value=s.font;$('color').value=s.color;$('bold').checked=s.bold;
     $('scale').value=s.scale;$('opacity').value=s.opacity;$('rot').value=s.rot;
     $('link').value=s.link||'';$('excl').value=s.excl||'';S.x=s.x;S.y=s.y;S.img=s.img||null;
+    $('suffix').value=s.suffix||'filigranli';
     $('tx').hidden=s.t!=='text';$('im').hidden=s.t!=='image';
     say('Kayıtlı ayarlar yüklendi.');
   }
+  sample();
   await buildWm();style();
 }
 
@@ -311,7 +319,7 @@ $('go').onclick=async()=>{
         }
       });
       const out=await doc.save();
-      download(out,S.files[i].name.replace(/\.pdf$/i,'')+'-pdfhane.pdf');
+      download(out,S.files[i].name.replace(/\.pdf$/i,'')+'-'+suffix()+'.pdf');
       await new Promise(r=>setTimeout(r,400));
     }
     say('Tamamlandı.');
