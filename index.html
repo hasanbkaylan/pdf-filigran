@@ -8,13 +8,14 @@
 :root{--bg:#f3f5f4;--panel:#fff;--ink:#17211d;--mute:#5d6b65;--line:#d5dcd8;--acc:#0f6b57;--acc2:#e8f3ef}
 @media(prefers-color-scheme:dark){:root{--bg:#121816;--panel:#1b2420;--ink:#e8efec;--mute:#93a39b;--line:#2f3c36;--acc:#3fbf9f;--acc2:#1f332c}}
 *{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
 body{margin:0;font:15px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
 header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
 h1{font-size:19px;margin:0}header span{color:var(--mute);font-size:13px}
-main{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:16px;max-width:1300px;margin:auto}
-@media(max-width:860px){main{grid-template-columns:1fr}}
-.side{display:flex;flex-direction:column;gap:12px}
-fieldset{border:1px solid var(--line);background:var(--panel);border-radius:8px;margin:0;padding:10px 12px 12px}
+main{display:grid;grid-template-columns:360px minmax(0,1fr);gap:16px;padding:16px;max-width:1300px;margin:auto}
+@media(max-width:860px){main{grid-template-columns:minmax(0,1fr);padding:10px}.stage{padding:8px}.al button{font-size:11px;padding:6px 0}}
+.side{min-width:0;display:flex;flex-direction:column;gap:12px}
+fieldset{min-width:0;border:1px solid var(--line);background:var(--panel);border-radius:8px;margin:0;padding:10px 12px 12px}
 legend{font-weight:600;padding:0 6px}
 label{display:block;font-size:13px;color:var(--mute);margin-top:8px}
 input[type=text],input[type=url],select,textarea{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
@@ -27,7 +28,7 @@ button:hover{background:var(--acc2)}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 button.pri{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
 button.pri:hover{filter:brightness(1.1);background:var(--acc)}
-.al{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px}
+.al{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:6px}
 .al.v{grid-template-columns:repeat(5,1fr)}
 .al button{padding:6px 2px;font-size:12px}
 #drop{border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--mute);cursor:pointer;background:var(--panel)}
@@ -40,7 +41,7 @@ button.pri:hover{filter:brightness(1.1);background:var(--acc)}
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
 .nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px}
 .nav button{flex:none}
-#wrap{position:relative;margin:auto;width:100%;max-width:720px;background:#888;line-height:0;user-select:none;touch-action:none}
+#wrap{overflow:hidden;position:relative;margin:auto;width:100%;max-width:720px;background:#888;line-height:0;user-select:none;touch-action:none}
 #cv{width:100%;height:auto;display:block}
 #wm{position:absolute;cursor:move;outline:1px dashed var(--acc);transform-origin:center}
 #wm img{width:100%;display:block;pointer-events:none}
@@ -65,7 +66,7 @@ button.pri:hover{filter:brightness(1.1);background:var(--acc)}
       <div><label for="color">Renk</label><input id="color" type="color" value="#cc2222" style="width:100%;height:34px"></div></div>
       <label style="display:flex;gap:6px;align-items:center"><input id="bold" type="checkbox" checked> Kalın</label>
     </div>
-    <div id="im" hidden><label for="imgfile">Görsel (PNG veya JPG)</label><input id="imgfile" type="file" accept="image/png,image/jpeg"></div>
+    <div id="im" hidden><label for="imgfile">Görsel (PNG veya JPG)</label><input id="imgfile" type="file" accept="image/png,image/jpeg"><p class="note" id="imnote"></p></div>
     <label for="scale">Boyut: <b id="scaleV"></b>% (sayfa genişliği)</label><input id="scale" type="range" min="5" max="100" value="30">
     <label for="opacity">Saydamlık: <b id="opV"></b>%</label><input id="opacity" type="range" min="5" max="100" value="40">
     <label for="rot">Döndürme: <b id="rotV"></b>°</label><input id="rot" type="range" min="-180" max="180" value="-30">
@@ -88,8 +89,12 @@ button.pri:hover{filter:brightness(1.1);background:var(--acc)}
     <label for="suffix" style="margin-top:0">Dosya adı eki</label>
     <input id="suffix" type="text" value="filigranli" placeholder="filigranli" maxlength="40">
     <p class="note">Çıktı adı: <b id="sample"></b>. Boş bırakırsan “filigranli” kullanılır.</p>
-    <div class="row" style="margin-top:10px"><button id="save">Ayarları kaydet</button><button id="clear">Kayıtlı ayarı sil</button></div>
-    <p class="note">Görsel, konum, bağlantı ve diğer ayarlar bu tarayıcıda saklanır; sayfa açılınca otomatik yüklenir.</p>
+    <label for="presets">Kayıtlı ayarlar</label>
+    <select id="presets"><option value="">(seçili değil)</option></select>
+    <label for="pname">Ayar adı</label>
+    <input id="pname" type="text" placeholder="Örn: Şirket logosu" maxlength="40">
+    <div class="row" style="margin-top:8px"><button id="save">Ayarları kaydet</button><button id="clear">Seçili ayarı sil</button></div>
+    <p class="note">Ayarlar (görsel dahil) bu tarayıcının veritabanında saklanır. Listeden seçince hemen yüklenir. Farklı bir ad yazıp kaydedersen yeni bir ayar oluşur. Yüklediğin görsel kaydetmesen de hatırlanır.</p>
     <button id="go" class="pri" style="width:100%;margin-top:8px">Filigranla ve indir</button>
     <div id="msg" role="status"></div>
   </fieldset>
@@ -153,6 +158,7 @@ async function buildWm(){
 /* ---------- önizleme ---------- */
 function style(){
   const el=$('wm'),wm=S.wm;
+  $('imnote').textContent=S.img?'Hafızada bir görsel var, yeniden yüklemen gerekmez.':'';
   $('scaleV').textContent=$('scale').value;$('opV').textContent=$('opacity').value;$('rotV').textContent=$('rot').value;
   el.hidden=!wm;
   if(!wm)return;
@@ -225,7 +231,7 @@ document.querySelectorAll('input[name=t]').forEach(r=>r.onchange=async()=>{
 $('imgfile').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=async()=>{S.img=r.result;await buildWm();style()};
+  r.onload=async()=>{S.img=r.result;kvSet('img',S.img).catch(()=>{});await buildWm();style()};
   r.readAsDataURL(f);
 };
 
@@ -265,24 +271,60 @@ function settings(){
     scale:$('scale').value,opacity:$('opacity').value,rot:$('rot').value,link:$('link').value,
     excl:$('excl').value,x:S.x,y:S.y,img:S.img};
 }
-$('save').onclick=()=>{
-  try{localStorage.setItem(KEY,JSON.stringify(settings()));say('Ayarlar kaydedildi.')}
-  catch(e){say('Kaydedilemedi: görsel çok büyük olabilir.')}
-};
-$('clear').onclick=()=>{localStorage.removeItem(KEY);say('Kayıtlı ayar silindi.')};
-async function load(){
-  let s;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-  if(s){
-    document.querySelector(`input[name=t][value=${s.t}]`).checked=true;
-    $('text').value=s.text;$('font').value=s.font;$('color').value=s.color;$('bold').checked=s.bold;
-    $('scale').value=s.scale;$('opacity').value=s.opacity;$('rot').value=s.rot;
-    $('link').value=s.link||'';$('excl').value=s.excl||'';S.x=s.x;S.y=s.y;S.img=s.img||null;
-    $('suffix').value=s.suffix||'filigranli';
-    $('tx').hidden=s.t!=='text';$('im').hidden=s.t!=='image';
-    say('Kayıtlı ayarlar yüklendi.');
-  }
+/* IndexedDB: görsel ve adlandırılmış ayarlar */
+const DB=new Promise((res,rej)=>{const r=indexedDB.open('filigran',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const idb=(mode,fn)=>DB.then(db=>new Promise((res,rej)=>{const t=db.transaction('kv',mode),q=fn(t.objectStore('kv'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)}));
+const kvGet=k=>idb('readonly',s=>s.get(k));
+const kvSet=(k,v)=>idb('readwrite',s=>s.put(v,k));
+const kvDel=k=>idb('readwrite',s=>s.delete(k));
+const kvKeys=()=>idb('readonly',s=>s.getAllKeys());
+
+async function refreshList(sel){
+  const names=(await kvKeys()).filter(k=>String(k).startsWith('p:')).map(k=>k.slice(2)).sort((a,b)=>a.localeCompare(b,'tr'));
+  const el=$('presets');el.innerHTML='<option value="">(seçili değil)</option>';
+  names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;el.append(o)});
+  el.value=names.includes(sel)?sel:'';
+}
+function apply(s){
+  const r=document.querySelector(`input[name=t][value=${s.t}]`);if(r)r.checked=true;
+  $('text').value=s.text;$('font').value=s.font;$('color').value=s.color;$('bold').checked=s.bold;
+  $('scale').value=s.scale;$('opacity').value=s.opacity;$('rot').value=s.rot;
+  $('link').value=s.link||'';$('excl').value=s.excl||'';S.x=s.x;S.y=s.y;S.img=s.img||null;
+  $('suffix').value=s.suffix||'filigranli';
+  $('tx').hidden=type()!=='text';$('im').hidden=type()!=='image';
   sample();
-  await buildWm();style();
+}
+async function loadPreset(name){
+  const s=await kvGet('p:'+name);if(!s)return;
+  apply(s);$('pname').value=name;
+  await kvSet('last',name);await buildWm();style();say(`“${name}” yüklendi.`);
+}
+$('presets').onchange=e=>{if(e.target.value)loadPreset(e.target.value)};
+$('save').onclick=async()=>{
+  const name=($('pname').value.trim()||$('presets').value||'Varsayılan').slice(0,40);
+  try{
+    await kvSet('p:'+name,settings());await kvSet('last',name);
+    $('pname').value=name;await refreshList(name);say(`“${name}” kaydedildi.`);
+  }catch(e){say('Kaydedilemedi: tarayıcı depolamaya izin vermiyor olabilir.')}
+};
+$('clear').onclick=async()=>{
+  const n=$('presets').value;
+  if(!n)return say('Silmek için önce listeden bir ayar seç.');
+  if(!confirm(`“${n}” silinsin mi?`))return;
+  await kvDel('p:'+n);if(await kvGet('last')===n)await kvDel('last');
+  $('pname').value='';await refreshList('');say(`“${n}” silindi.`);
+};
+async function load(){
+  try{
+    const old=localStorage.getItem(KEY); // eski sürümden taşı
+    if(old){await kvSet('p:Varsayılan',JSON.parse(old));await kvSet('last','Varsayılan');localStorage.removeItem(KEY)}
+    const last=await kvGet('last');
+    await refreshList(last);
+    const s=last&&await kvGet('p:'+last);
+    if(s){apply(s);$('pname').value=last;say(`“${last}” yüklendi.`)}
+    else{const im=await kvGet('img');if(im)S.img=im}
+  }catch(e){}
+  sample();await buildWm();style();
 }
 
 /* ---------- PDF'e uygula ---------- */
