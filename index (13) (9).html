@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF Filigran Aracı</title>
+<style>
+:root{--bg:#f3f5f4;--panel:#fff;--ink:#17211d;--mute:#5d6b65;--line:#d5dcd8;--acc:#0f6b57;--acc2:#e8f3ef}
+@media(prefers-color-scheme:dark){:root{--bg:#121816;--panel:#1b2420;--ink:#e8efec;--mute:#93a39b;--line:#2f3c36;--acc:#3fbf9f;--acc2:#1f332c}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+h1{font-size:19px;margin:0}header span{color:var(--mute);font-size:13px}
+main{display:grid;grid-template-columns:360px 1fr;gap:16px;padding:16px;max-width:1300px;margin:auto}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:12px}
+fieldset{border:1px solid var(--line);background:var(--panel);border-radius:8px;margin:0;padding:10px 12px 12px}
+legend{font-weight:600;padding:0 6px}
+label{display:block;font-size:13px;color:var(--mute);margin-top:8px}
+input[type=text],input[type=url],select,textarea{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+textarea{resize:vertical;min-height:50px}
+input[type=range]{width:100%}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1}
+button{font:inherit;padding:7px 10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer}
+button:hover{background:var(--acc2)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button.pri{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:600}
+button.pri:hover{filter:brightness(1.1);background:var(--acc)}
+.al{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:6px}
+.al.v{grid-template-columns:repeat(5,1fr)}
+.al button{padding:6px 2px;font-size:12px}
+#drop{border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--mute);cursor:pointer;background:var(--panel)}
+#drop.on{border-color:var(--acc);background:var(--acc2)}
+#list{list-style:none;margin:8px 0 0;padding:0;font-size:13px}
+#list li{display:flex;gap:6px;align-items:center;padding:4px 6px;border-radius:5px;cursor:pointer}
+#list li.cur{background:var(--acc2);font-weight:600}
+#list li span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#list li button{padding:0 6px;flex:none}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.nav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:10px}
+.nav button{flex:none}
+#wrap{position:relative;margin:auto;width:100%;max-width:720px;background:#888;line-height:0;user-select:none;touch-action:none}
+#cv{width:100%;height:auto;display:block}
+#wm{position:absolute;cursor:move;outline:1px dashed var(--acc);transform-origin:center}
+#wm img{width:100%;display:block;pointer-events:none}
+#wm.off{opacity:.15!important;outline-color:#c33}
+#empty{padding:60px 10px;text-align:center;color:var(--mute);line-height:1.5}
+.note{font-size:12px;color:var(--mute);margin:6px 0 0}
+#msg{font-size:13px;color:var(--acc);min-height:18px;margin-top:6px}
+</style>
+</head>
+<body>
+<header><h1>PDF Filigran Aracı</h1><span>Her şey tarayıcında çalışır; dosyaların hiçbir yere yüklenmez.</span></header>
+<main>
+<div class="side">
+  <div id="drop" tabindex="0">PDF dosyalarını buraya bırak veya tıkla<input id="pdfs" type="file" accept="application/pdf" multiple hidden></div>
+  <ul id="list"></ul>
+
+  <fieldset><legend>Filigran</legend>
+    <div class="row"><label style="margin:0"><input type="radio" name="t" value="text" checked> Metin</label><label style="margin:0"><input type="radio" name="t" value="image"> Görsel</label></div>
+    <div id="tx">
+      <label for="text">Metin (çok satırlı olabilir)</label><textarea id="text">GİZLİ</textarea>
+      <div class="row"><div><label for="font">Yazı tipi</label><select id="font"><option>Arial</option><option>Georgia</option><option>Times New Roman</option><option>Courier New</option><option>Impact</option></select></div>
+      <div><label for="color">Renk</label><input id="color" type="color" value="#cc2222" style="width:100%;height:34px"></div></div>
+      <label style="display:flex;gap:6px;align-items:center"><input id="bold" type="checkbox" checked> Kalın</label>
+    </div>
+    <div id="im" hidden><label for="imgfile">Görsel (PNG veya JPG)</label><input id="imgfile" type="file" accept="image/png,image/jpeg"></div>
+    <label for="scale">Boyut: <b id="scaleV"></b>% (sayfa genişliği)</label><input id="scale" type="range" min="5" max="100" value="30">
+    <label for="opacity">Saydamlık: <b id="opV"></b>%</label><input id="opacity" type="range" min="5" max="100" value="40">
+    <label for="rot">Döndürme: <b id="rotV"></b>°</label><input id="rot" type="range" min="-180" max="180" value="-30">
+    <label for="link">Tıklanınca açılacak bağlantı (isteğe bağlı)</label><input id="link" type="url" placeholder="https://ornek.com">
+  </fieldset>
+
+  <fieldset><legend>Konum</legend>
+    <p class="note" style="margin:0">Önizlemede filigranı sürükleyebilir veya düğmeleri kullanabilirsin.</p>
+    <div class="al" id="alx"><button data-x="L">Sol</button><button data-x=".3">Hafif sol</button><button data-x=".5">Orta</button><button data-x=".7">Hafif sağ</button><button data-x="R">Sağ</button></div>
+    <div class="al" id="aly"><button data-y="T">Üst</button><button data-y=".3">Hafif üst</button><button data-y=".5">Orta</button><button data-y=".7">Hafif alt</button><button data-y="B">Alt</button></div>
+  </fieldset>
+
+  <fieldset><legend>Muaf sayfalar</legend>
+    <label for="excl" style="margin-top:0">Filigran konmayacak sayfalar</label>
+    <input id="excl" type="text" placeholder="Örn: 1, 3-5, 10-">
+    <p class="note">Aralıklar desteklenir. “10-” 10. sayfadan sona kadar demektir. Tüm dosyalara uygulanır.</p>
+  </fieldset>
+
+  <fieldset><legend>Ayarlar ve çıktı</legend>
+    <div class="row"><button id="save">Ayarları kaydet</button><button id="clear">Kayıtlı ayarı sil</button></div>
+    <p class="note">Görsel, konum, bağlantı ve diğer ayarlar bu tarayıcıda saklanır; sayfa açılınca otomatik yüklenir.</p>
+    <button id="go" class="pri" style="width:100%;margin-top:8px">Filigranla ve indir</button>
+    <div id="msg" role="status"></div>
+  </fieldset>
+</div>
+
+<div class="stage">
+  <div class="nav"><button id="prev">‹</button><span id="pn">–</span><button id="next">›</button></div>
+  <div id="empty">Önizleme için bir PDF ekle.</div>
+  <div id="wrap" hidden><canvas id="cv"></canvas><div id="wm"><img id="wmi" alt=""></div></div>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const KEY='pdf-filigran-ayar';
+const S={files:[],cur:-1,page:1,pages:0,doc:null,wm:null,img:null,x:.5,y:.5,tok:0};
+
+/* pdf.js worker'ı çapraz kaynak sorunu olmasın diye blob olarak yükle */
+const workerReady=fetch('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js')
+ .then(r=>r.text()).then(t=>{pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}))})
+ .catch(()=>{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'});
+
+const say=t=>{$('msg').textContent=t};
+const type=()=>document.querySelector('input[name=t]:checked').value;
+const b64bytes=u=>Uint8Array.from(atob(u.split(',')[1]),c=>c.charCodeAt(0));
+
+/* ---------- muaf sayfalar ---------- */
+function parseEx(str,total){
+  const set=new Set();
+  str.split(/[,;\s]+/).filter(Boolean).forEach(p=>{
+    const m=p.match(/^(\d*)-(\d*)$/);
+    if(m){const a=+m[1]||1,b=+m[2]||total;for(let i=a;i<=b;i++)set.add(i)}
+    else if(/^\d+$/.test(p))set.add(+p);
+  });
+  return set;
+}
+
+/* ---------- filigran görseli ---------- */
+function loadImg(url){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=url})}
+async function buildWm(){
+  if(type()==='image'){
+    if(!S.img){S.wm=null;return}
+    const i=await loadImg(S.img);
+    S.wm={url:S.img,bytes:b64bytes(S.img),png:S.img.startsWith('data:image/png'),iw:i.width,ih:i.height};
+  }else{
+    const lines=($('text').value||' ').split('\n'),px=200;
+    const font=`${$('bold').checked?'bold ':''}${px}px "${$('font').value}"`;
+    const c=document.createElement('canvas'),x=c.getContext('2d');
+    x.font=font;
+    const w=Math.ceil(Math.max(...lines.map(l=>x.measureText(l).width)))+60,lh=px*1.2;
+    c.width=w;c.height=Math.ceil(lh*lines.length)+40;
+    x.font=font;x.fillStyle=$('color').value;x.textBaseline='top';
+    lines.forEach((l,i)=>x.fillText(l,(w-x.measureText(l).width)/2,20+i*lh));
+    const url=c.toDataURL('image/png');
+    S.wm={url,bytes:b64bytes(url),png:true,iw:c.width,ih:c.height};
+  }
+}
+
+/* ---------- önizleme ---------- */
+function style(){
+  const el=$('wm'),wm=S.wm;
+  $('scaleV').textContent=$('scale').value;$('opV').textContent=$('opacity').value;$('rotV').textContent=$('rot').value;
+  el.hidden=!wm;
+  if(!wm)return;
+  $('wmi').src=wm.url;
+  el.style.width=$('scale').value+'%';
+  el.style.left=S.x*100+'%';el.style.top=S.y*100+'%';
+  el.style.opacity=$('opacity').value/100;
+  el.style.transform=`translate(-50%,-50%) rotate(${$('rot').value}deg)`;
+  const ex=parseEx($('excl').value,S.pages).has(S.page);
+  el.classList.toggle('off',ex);
+  $('pn').textContent=S.pages?`Sayfa ${S.page} / ${S.pages}${ex?' (muaf)':''}`:'–';
+}
+async function render(){
+  if(S.cur<0)return;
+  const t=++S.tok;
+  const pg=await S.doc.getPage(S.page);
+  const w=Math.min($('wrap').parentElement.clientWidth-24,720)||600;
+  const vp0=pg.getViewport({scale:1}),sc=w/vp0.width*(window.devicePixelRatio||1);
+  const vp=pg.getViewport({scale:sc}),cv=$('cv');
+  cv.width=vp.width;cv.height=vp.height;
+  await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+  if(t!==S.tok)return;
+  style();
+}
+async function select(i){
+  S.cur=i;renderList();
+  if(i<0){$('wrap').hidden=true;$('empty').hidden=false;S.pages=0;style();return}
+  await workerReady;
+  S.doc=await pdfjsLib.getDocument({data:S.files[i].bytes.slice()}).promise;
+  S.pages=S.doc.numPages;S.page=1;
+  $('wrap').hidden=false;$('empty').hidden=true;
+  await render();
+}
+function renderList(){
+  const ul=$('list');ul.innerHTML='';
+  S.files.forEach((f,i)=>{
+    const li=document.createElement('li');li.className=i===S.cur?'cur':'';
+    const s=document.createElement('span');s.textContent=f.name;s.title=f.name;
+    const b=document.createElement('button');b.textContent='×';b.title='Listeden çıkar';b.setAttribute('aria-label','Çıkar');
+    b.onclick=e=>{e.stopPropagation();S.files.splice(i,1);select(Math.min(S.cur,S.files.length-1))};
+    li.onclick=()=>select(i);li.append(s,b);ul.append(li);
+  });
+}
+async function addFiles(fl){
+  for(const f of fl){
+    if(f.type!=='application/pdf'&&!/\.pdf$/i.test(f.name))continue;
+    S.files.push({name:f.name,bytes:new Uint8Array(await f.arrayBuffer())});
+  }
+  if(S.cur<0&&S.files.length)select(0);else renderList();
+}
+
+/* ---------- olaylar ---------- */
+const drop=$('drop');
+drop.onclick=()=>$('pdfs').click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')$('pdfs').click()};
+$('pdfs').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};
+drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');addFiles(e.dataTransfer.files)};
+
+$('prev').onclick=()=>{if(S.page>1){S.page--;render()}};
+$('next').onclick=()=>{if(S.page<S.pages){S.page++;render()}};
+
+document.querySelectorAll('input[name=t]').forEach(r=>r.onchange=async()=>{
+  $('tx').hidden=type()!=='text';$('im').hidden=type()!=='image';
+  await buildWm();style();
+});
+['text','font','color','bold'].forEach(id=>$(id).addEventListener('input',async()=>{await buildWm();style()}));
+['scale','opacity','rot','excl'].forEach(id=>$(id).addEventListener('input',style));
+$('imgfile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{S.img=r.result;await buildWm();style()};
+  r.readAsDataURL(f);
+};
+
+$('alx').onclick=e=>{
+  const v=e.target.dataset.x;if(!v)return;
+  const half=$('scale').value/200;
+  S.x=v==='L'?.03+half:v==='R'?.97-half:+v;
+  S.x=Math.min(1,Math.max(0,S.x));style();
+};
+$('aly').onclick=e=>{
+  const v=e.target.dataset.y;if(!v)return;
+  const el=$('wm'),half=el.offsetHeight/2/$('cv').clientHeight;
+  S.y=v==='T'?.03+half:v==='B'?.97-half:+v;
+  S.y=Math.min(1,Math.max(0,S.y));style();
+};
+
+/* sürükleme */
+(()=>{
+  const el=$('wm');let d=null;
+  el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);d=true};
+  el.onpointermove=e=>{
+    if(!d)return;
+    const r=$('wrap').getBoundingClientRect();
+    S.x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+    S.y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));
+    style();
+  };
+  el.onpointerup=()=>{d=null};
+})();
+
+/* ---------- kaydet / yükle ---------- */
+function settings(){
+  return{t:type(),text:$('text').value,font:$('font').value,color:$('color').value,bold:$('bold').checked,
+    scale:$('scale').value,opacity:$('opacity').value,rot:$('rot').value,link:$('link').value,
+    excl:$('excl').value,x:S.x,y:S.y,img:S.img};
+}
+$('save').onclick=()=>{
+  try{localStorage.setItem(KEY,JSON.stringify(settings()));say('Ayarlar kaydedildi.')}
+  catch(e){say('Kaydedilemedi: görsel çok büyük olabilir.')}
+};
+$('clear').onclick=()=>{localStorage.removeItem(KEY);say('Kayıtlı ayar silindi.')};
+async function load(){
+  let s;try{s=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+  if(s){
+    document.querySelector(`input[name=t][value=${s.t}]`).checked=true;
+    $('text').value=s.text;$('font').value=s.font;$('color').value=s.color;$('bold').checked=s.bold;
+    $('scale').value=s.scale;$('opacity').value=s.opacity;$('rot').value=s.rot;
+    $('link').value=s.link||'';$('excl').value=s.excl||'';S.x=s.x;S.y=s.y;S.img=s.img||null;
+    $('tx').hidden=s.t!=='text';$('im').hidden=s.t!=='image';
+    say('Kayıtlı ayarlar yüklendi.');
+  }
+  await buildWm();style();
+}
+
+/* ---------- PDF'e uygula ---------- */
+function download(bytes,name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+  a.download=name;document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+$('go').onclick=async()=>{
+  if(!S.files.length)return say('Önce PDF ekle.');
+  if(!S.wm)return say('Önce bir filigran görseli seç veya metin yaz.');
+  const{PDFDocument,PDFString,degrees}=PDFLib;
+  const op=$('opacity').value/100,sc=$('scale').value/100,rot=+$('rot').value;
+  const th=-rot*Math.PI/180,url=$('link').value.trim();
+  $('go').disabled=true;
+  try{
+    for(let i=0;i<S.files.length;i++){
+      say(`İşleniyor (${i+1}/${S.files.length}): ${S.files[i].name}`);
+      const doc=await PDFDocument.load(S.files[i].bytes,{ignoreEncryption:true});
+      const img=S.wm.png?await doc.embedPng(S.wm.bytes):await doc.embedJpg(S.wm.bytes); // dosyaya yalnızca 1 kez gömülür
+      const pages=doc.getPages(),ex=parseEx($('excl').value,pages.length);
+      pages.forEach((p,n)=>{
+        if(ex.has(n+1))return;
+        const{width:W,height:H}=p.getSize();
+        const w=sc*W,h=w*S.wm.ih/S.wm.iw,cx=S.x*W,cy=H-S.y*H;
+        const c=Math.cos(th),s=Math.sin(th);
+        p.drawImage(img,{x:cx+(-w/2*c+h/2*s),y:cy+(-w/2*s-h/2*c),width:w,height:h,rotate:degrees(th*180/Math.PI),opacity:op});
+        if(url){
+          const bw=Math.abs(w*c)+Math.abs(h*s),bh=Math.abs(w*s)+Math.abs(h*c);
+          const ann=doc.context.obj({Type:'Annot',Subtype:'Link',Rect:[cx-bw/2,cy-bh/2,cx+bw/2,cy+bh/2],Border:[0,0,0],
+            A:{Type:'Action',S:'URI',URI:PDFString.of(url)}});
+          p.node.addAnnot(doc.context.register(ann));
+        }
+      });
+      const out=await doc.save();
+      download(out,S.files[i].name.replace(/\.pdf$/i,'')+'-filigranli.pdf');
+      await new Promise(r=>setTimeout(r,400));
+    }
+    say('Tamamlandı.');
+  }catch(e){console.error(e);say('Hata: '+e.message)}
+  $('go').disabled=false;
+};
+
+window.addEventListener('resize',()=>{if(S.cur>=0)render()});
+load();
+</script>
+</body>
+</html>
